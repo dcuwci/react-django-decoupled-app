@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'api',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +135,46 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+USE_LOCALSTACK = os.environ.get('USE_LOCALSTACK') == 'true'
+
+if USE_LOCALSTACK:
+    # AWS/LocalStack S3 Configuration
+    AWS_S3_ENDPOINT_URL = 'http://localstack:4566'
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', 'test')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'test')
+    AWS_STORAGE_BUCKET_NAME = 'my-test-bucket'
+    AWS_S3_REGION_NAME = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_S3_VERIFY = False  # Disable SSL verification for LocalStack
+    AWS_S3_USE_SSL = False  # Use HTTP instead of HTTPS for LocalStack
+    
+    # Only use S3 storage if we can connect to LocalStack
+    try:
+        import boto3
+        from botocore.exceptions import NoCredentialsError, EndpointConnectionError
+        
+        # Test connection to LocalStack
+        s3_client = boto3.client(
+            's3',
+            endpoint_url=AWS_S3_ENDPOINT_URL,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_S3_REGION_NAME,
+            verify=AWS_S3_VERIFY,
+            use_ssl=AWS_S3_USE_SSL
+        )
+        
+        # This will be set only if LocalStack is available
+        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        print("S3 storage configured with LocalStack")
+        
+    except (NoCredentialsError, EndpointConnectionError, Exception) as e:
+        print(f"Warning: Could not connect to LocalStack S3: {e}")
+        print("Falling back to local file storage")
+        # Fall back to default file storage if LocalStack is not available
+        pass
+else:
+    print("LocalStack integration disabled")
+

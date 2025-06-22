@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Exit script on error
+set -e
+
+# Set AWS environment variables
+export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+
+# Only initialize LocalStack if USE_LOCALSTACK is true
+if [ "${USE_LOCALSTACK}" = "true" ]; then
+  echo "LocalStack integration enabled. Waiting for LocalStack..."
+  
+  # Wait up to 30 seconds for LocalStack to be ready
+  TIMEOUT=30
+  COUNTER=0
+  while ! aws --endpoint-url=http://localstack:4566 s3 ls &> /dev/null; do
+    if [ $COUNTER -ge $TIMEOUT ]; then
+      echo "Warning: Timeout waiting for LocalStack to be ready. Starting Django anyway..."
+      echo "LocalStack may not be available, but Django will start without S3 functionality."
+      break
+    fi
+    echo "Waiting for LocalStack... ($COUNTER/$TIMEOUT)"
+    sleep 2
+    COUNTER=$((COUNTER + 2))
+  done
+
+  if [ $COUNTER -lt $TIMEOUT ]; then
+    echo "LocalStack is ready."
+    
+    # Create S3 bucket
+    BUCKET_NAME="my-test-bucket"
+    echo "Checking if bucket $BUCKET_NAME exists..."
+    if ! aws --endpoint-url=http://localstack:4566 s3 ls "s3://$BUCKET_NAME" &> /dev/null; then
+      echo "Creating bucket: $BUCKET_NAME"
+      if aws --endpoint-url=http://localstack:4566 s3 mb "s3://$BUCKET_NAME"; then
+        echo "Bucket $BUCKET_NAME created successfully."
+      else
+        echo "Warning: Failed to create bucket $BUCKET_NAME"
+      fi
+    else
+      echo "Bucket $BUCKET_NAME already exists."
+    fi
+  fi
+else
+  echo "LocalStack integration disabled. Skipping LocalStack initialization."
+fi
+
+echo "Starting Django application..."
+
+# Execute the main command
+exec "$@"

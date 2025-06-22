@@ -13,13 +13,19 @@ WORKDIR /app
 COPY requirements.txt /app/
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y awscli && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application's code
 COPY . /app/
+
+# Copy the entrypoint script
+COPY aws-init.sh /app/
+RUN chmod +x /app/aws-init.sh
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Run the application
+ENTRYPOINT ["/app/aws-init.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi"]

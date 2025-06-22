@@ -16,11 +16,14 @@ services:
       - ./backend:/app
     env_file:
       - ./.env.db
+    environment:
+      - USE_LOCALSTACK=true
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
     depends_on:
       - db
-    command: >
-      sh -c "python manage.py migrate &&
-             gunicorn --bind 0.0.0.0:8000 backend.wsgi"
+      - localstack
 
   frontend:
     build: ./frontend
@@ -30,5 +33,28 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=us-east-1
+      - EAGER_SERVICE_LOADING=1
+      - DATA_DIR=/var/lib/localstack
+      - DEBUG=1
+      - PERSISTENCE=1
+    volumes:
+      - "localstack_data:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   postgres_data:
+  localstack_data:

@@ -36,14 +36,18 @@ function App() {
       // We send the new message in the request body, formatted as JSON.
       body: JSON.stringify({ body: newMessage })
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
-      // After the new message is created, the backend sends it back to us.
-      // We add the new message to our `messages` state array.
-      // The `...messages` syntax is called the spread operator. It creates a new array with all the existing messages, plus the new one.
       setMessages([...messages, data]);
-      // We clear the input field by resetting the `newMessage` state.
       setNewMessage('');
+    })
+    .catch(error => {
+      console.error('There has been a problem with your fetch operation:', error);
     });
   };
 
