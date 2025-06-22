@@ -1,0 +1,54 @@
+.App {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-header {
+  margin-bottom: 2rem;
+}
+
+.App-content {
+  width: 80%;
+  max-width: 600px;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  background-color: #3e4451;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 5px;
+}
+
+form {
+  display: flex;
+  margin-top: 1rem;
+}
+
+input {
+  flex-grow: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px 0 0 5px;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #61dafb;
+  border: none;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+}
