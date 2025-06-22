@@ -49,5 +49,13 @@ fi
 
 echo "Starting Django application..."
 
+# Wait for database to be ready
+echo "Waiting for database to be ready..."
+python manage.py migrate --check || {
+  echo "Running database migrations..."
+  python manage.py migrate
+  echo "Migrations completed successfully."
+}
+
 # Execute the main command
 exec "$@"

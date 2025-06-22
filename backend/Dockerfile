@@ -28,4 +28,4 @@ EXPOSE 8000
 
 # Run the application
 ENTRYPOINT ["/app/aws-init.sh"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi"]
+CMD ["sh", "-c", "if [ \"$DJANGO_ENV\" = \"development\" ]; then python manage.py runserver 0.0.0.0:8000; else gunicorn -c gunicorn.conf.py backend.wsgi:application; fi"]

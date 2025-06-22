@@ -13,13 +13,28 @@ function App() {
   // `setNewMessage` is the function we use to update the `newMessage` state.
   const [newMessage, setNewMessage] = useState('');
 
+  // State for image functionality
+  const [images, setImages] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imageTitle, setImageTitle] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
+
   // `useEffect` is a React Hook that lets you synchronize a component with an external system.
   // In this case, we use it to fetch data from our Django backend when the component first loads.
   // The empty array `[]` as the second argument means this effect will only run once, after the initial render.
   useEffect(() => {
+    // Fetch messages
     fetch('http://localhost:8000/api/messages/')
       .then(response => response.json())
       .then(data => setMessages(data));
+
+    // Fetch images
+    fetch('http://localhost:8000/api/images/')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Fetched images:', data);
+        setImages(data);
+      });
   }, []);
 
   // This function is called when the form is submitted.
@@ -51,6 +66,50 @@ function App() {
     });
   };
 
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  // Handle image upload
+  const handleImageUpload = (e) => {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+      setUploadStatus('Please select a file first');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+    formData.append('title', imageTitle);
+
+    setUploadStatus('Uploading...');
+
+    fetch('http://localhost:8000/api/images/', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      return response.json();
+    })
+    .then(data => {
+      setImages([data, ...images]);
+      setSelectedFile(null);
+      setImageTitle('');
+      setUploadStatus('Upload successful!');
+      // Clear the file input
+      document.getElementById('imageInput').value = '';
+    })
+    .catch(error => {
+      console.error('Upload error:', error);
+      setUploadStatus('Upload failed. Please try again.');
+    });
+  };
+
   // This is the JSX that defines the structure of our component. It looks like HTML, but it's actually JavaScript.
   return (
     <div className="App">
@@ -79,6 +138,56 @@ function App() {
           />
           <button type="submit">Send</button>
         </form>
+
+        {/* Image Upload Section */}
+        <div className="image-section">
+          <h2>Upload Images</h2>
+          <form onSubmit={handleImageUpload}>
+            <div>
+              <input
+                type="text"
+                value={imageTitle}
+                onChange={(e) => setImageTitle(e.target.value)}
+                placeholder="Enter image title (optional)"
+              />
+            </div>
+            <div>
+              <input
+                id="imageInput"
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+              />
+            </div>
+            <button type="submit">Upload Image</button>
+          </form>
+          {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
+        </div>
+
+        {/* Image Gallery */}
+        <div className="image-gallery">
+          <h2>Image Gallery</h2>
+          <div className="images-grid">
+            {images.map(image => (
+              <div key={image.id} className="image-item">
+                <img
+                  src={image.image_url || `http://localhost:8000${image.image}`}
+                  alt={image.title || 'Uploaded image'}
+                  onError={(e) => {
+                    console.error('Image failed to load:', image.image_url || image.image);
+                    e.target.style.backgroundColor = '#f0f0f0';
+                    e.target.style.color = '#666';
+                    e.target.alt = 'Image not available';
+                  }}
+                />
+                {image.title && <p className="image-title">{image.title}</p>}
+                <p className="image-date">
+                  Uploaded: {new Date(image.uploaded_at).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
