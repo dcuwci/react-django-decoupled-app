@@ -34,7 +34,6 @@ db.sqlite3-journal
 
 # Environments
 .env
-.env.db
 .venv
 env/
 venv/
