@@ -171,10 +171,10 @@ function App() {
             {images.map(image => (
               <div key={image.id} className="image-item">
                 <img
-                  src={image.image_url || `http://localhost:8000${image.image}`}
+                  src={image.image_url}
                   alt={image.title || 'Uploaded image'}
                   onError={(e) => {
-                    console.error('Image failed to load:', image.image_url || image.image);
+                    console.error('Image failed to load:', image.image_url);
                     e.target.style.backgroundColor = '#f0f0f0';
                     e.target.style.color = '#666';
                     e.target.alt = 'Image not available';

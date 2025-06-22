@@ -6,10 +6,11 @@ A full-stack application with React frontend and Django REST API backend, config
 
 - Django REST API backend with PostgreSQL database
 - React frontend
-- LocalStack for S3 storage simulation
+- LocalStack for S3 storage simulation (exclusive storage)
 - Docker containerization
 - Development and production configurations
 - Gunicorn WSGI server for production
+- All file uploads stored exclusively in simulated S3
 
 ## Quick Start
 
@@ -59,11 +60,13 @@ The production setup uses a custom Gunicorn configuration (`backend/gunicorn.con
 
 ## LocalStack Integration
 
-Both development and production modes support LocalStack for S3 storage:
+Both development and production modes use LocalStack exclusively for S3 storage:
 
 - Automatic bucket creation
-- Fallback to local storage if LocalStack unavailable
+- All file uploads stored in simulated S3
+- No local file storage fallback
 - Health checks and retry logic
+- Migration script available to move existing files to S3
 
 ## Security Features (Production)
 
@@ -99,13 +102,27 @@ docker-compose logs backend
 ## Troubleshooting
 
 1. **Database connection issues**: Ensure PostgreSQL container is running
-2. **LocalStack not available**: App will fallback to local file storage
+2. **LocalStack not available**: App requires LocalStack for S3 storage
 3. **Permission errors**: Check Docker volume permissions
 4. **Port conflicts**: Ensure ports 3000, 8000, and 4566 are available
 5. **Images not displaying**:
    - Check browser console for image loading errors
-   - Ensure media files are being served (fixed in this configuration)
+   - Ensure LocalStack S3 is running and accessible
    - Verify image uploads are successful via API response
+   - Run migration script to move existing local images to S3
+
+## Migration to S3
+
+To migrate existing local images to LocalStack S3:
+
+```bash
+docker-compose exec backend python migrate_to_s3.py
+```
+
+This script will:
+- Move all existing local images to LocalStack S3
+- Update database records to point to S3 URLs
+- Provide a summary of migrated files
 
 ## Development
 

@@ -155,33 +155,25 @@ if USE_LOCALSTACK:
     AWS_S3_VERIFY = False  # Disable SSL verification for LocalStack
     AWS_S3_USE_SSL = False  # Use HTTP instead of HTTPS for LocalStack
     
-    # Only use S3 storage if we can connect to LocalStack
-    try:
-        import boto3
-        from botocore.exceptions import NoCredentialsError, EndpointConnectionError
-        
-        # Test connection to LocalStack
-        s3_client = boto3.client(
-            's3',
-            endpoint_url=AWS_S3_ENDPOINT_URL,
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-            region_name=AWS_S3_REGION_NAME,
-            verify=AWS_S3_VERIFY,
-            use_ssl=AWS_S3_USE_SSL
-        )
-        
-        # This will be set only if LocalStack is available
-        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-        print("S3 storage configured with LocalStack")
-        
-    except (NoCredentialsError, EndpointConnectionError, Exception) as e:
-        print(f"Warning: Could not connect to LocalStack S3: {e}")
-        print("Falling back to local file storage")
-        # Fall back to default file storage if LocalStack is not available
-        pass
+    # Additional S3 settings for proper LocalStack integration
+    AWS_S3_CUSTOM_DOMAIN = None
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    AWS_LOCATION = ''  # No subdirectory in bucket
+    
+    # Force S3 storage for all file uploads - no fallback to local storage
+    DEFAULT_FILE_STORAGE = 'storage_backends.LocalStackS3Storage'
+    
+    # Override media settings to use S3 exclusively
+    MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
+    
+    print("S3 storage configured with LocalStack - all files will be stored in S3")
+    print(f"Storage backend: {DEFAULT_FILE_STORAGE}")
+    print(f"S3 Endpoint: {AWS_S3_ENDPOINT_URL}")
+    print(f"S3 Bucket: {AWS_STORAGE_BUCKET_NAME}")
 else:
-    print("LocalStack integration disabled")
+    print("LocalStack integration disabled - using local file storage")
 
 # Security settings for production
 if not DEBUG:

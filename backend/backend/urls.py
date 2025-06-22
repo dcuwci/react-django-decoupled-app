@@ -24,6 +24,8 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ]
 
-# Serve media files in all environments (development and production with Gunicorn)
-# In a real production environment, you'd use nginx or a CDN to serve static files
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Media files are now served exclusively through LocalStack S3
+# No local media file serving needed
+if not getattr(settings, 'USE_LOCALSTACK', False):
+    # Only serve local media files if LocalStack is disabled
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -15,9 +15,11 @@ class ImageSerializer(serializers.ModelSerializer):
         read_only_fields = ('uploaded_at',)
     
     def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'url'):
-            if request is not None:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+        if obj.image and obj.image.name:
+            # Return the proxy URL that will serve the image from S3
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(f'/api/s3-image/{obj.image.name}')
+            else:
+                return f'/api/s3-image/{obj.image.name}'
         return None
