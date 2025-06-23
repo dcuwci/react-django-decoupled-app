@@ -21,5 +21,8 @@ class ImageSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(f'/api/s3-image/{obj.image.name}')
             else:
-                return f'/api/s3-image/{obj.image.name}'
+                # Fallback URL when no request context is available
+                from django.conf import settings
+                base_url = 'http://localhost:8000' if settings.DEBUG else ''
+                return f'{base_url}/api/s3-image/{obj.image.name}'
         return None

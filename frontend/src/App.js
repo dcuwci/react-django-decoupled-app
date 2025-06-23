@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// API base URL - use environment variable or default to localhost for development
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // The main component of our application
 function App() {
@@ -24,16 +26,35 @@ function App() {
   // The empty array `[]` as the second argument means this effect will only run once, after the initial render.
   useEffect(() => {
     // Fetch messages
-    fetch('http://localhost:8000/api/messages/')
-      .then(response => response.json())
-      .then(data => setMessages(data));
+    fetch(`${API_BASE_URL}/api/messages/`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Fetched messages:', data);
+        setMessages(data);
+      })
+      .catch(error => {
+        console.error('Error fetching messages:', error);
+      });
 
     // Fetch images
-    fetch('http://localhost:8000/api/images/')
-      .then(response => response.json())
+    fetch(`${API_BASE_URL}/api/images/`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
         console.log('Fetched images:', data);
         setImages(data);
+      })
+      .catch(error => {
+        console.error('Error fetching images:', error);
       });
   }, []);
 
@@ -43,7 +64,7 @@ function App() {
     e.preventDefault();
 
     // We send a POST request to our backend to create a new message.
-    fetch('http://localhost:8000/api/messages/', {
+    fetch(`${API_BASE_URL}/api/messages/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -86,7 +107,7 @@ function App() {
 
     setUploadStatus('Uploading...');
 
-    fetch('http://localhost:8000/api/images/', {
+    fetch(`${API_BASE_URL}/api/images/`, {
       method: 'POST',
       body: formData
     })

@@ -12,8 +12,8 @@ export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
 if [ "${USE_LOCALSTACK}" = "true" ]; then
   echo "LocalStack integration enabled. Waiting for LocalStack..."
   
-  # Wait up to 30 seconds for LocalStack to be ready
-  TIMEOUT=30
+  # Wait up to 60 seconds for LocalStack to be ready
+  TIMEOUT=60
   COUNTER=0
   while ! aws --endpoint-url=http://localstack:4566 s3 ls &> /dev/null; do
     if [ $COUNTER -ge $TIMEOUT ]; then
@@ -22,8 +22,8 @@ if [ "${USE_LOCALSTACK}" = "true" ]; then
       break
     fi
     echo "Waiting for LocalStack... ($COUNTER/$TIMEOUT)"
-    sleep 2
-    COUNTER=$((COUNTER + 2))
+    sleep 3
+    COUNTER=$((COUNTER + 3))
   done
 
   if [ $COUNTER -lt $TIMEOUT ]; then
@@ -51,11 +51,34 @@ echo "Starting Django application..."
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
-python manage.py migrate --check || {
-  echo "Running database migrations..."
-  python manage.py migrate
-  echo "Migrations completed successfully."
-}
+TIMEOUT=30
+COUNTER=0
+while ! python manage.py migrate --check &> /dev/null; do
+  if [ $COUNTER -ge $TIMEOUT ]; then
+    echo "Warning: Database not ready after $TIMEOUT seconds. Attempting migrations anyway..."
+    break
+  fi
+  echo "Waiting for database... ($COUNTER/$TIMEOUT)"
+  sleep 2
+  COUNTER=$((COUNTER + 2))
+done
+
+echo "Running database migrations..."
+python manage.py migrate
+echo "Migrations completed successfully."
+
+# Create S3 bucket if LocalStack is enabled and bucket doesn't exist
+if [ "${USE_LOCALSTACK}" = "true" ] && [ $COUNTER -lt $TIMEOUT ]; then
+  BUCKET_NAME="my-test-bucket"
+  echo "Ensuring S3 bucket $BUCKET_NAME exists..."
+  if ! aws --endpoint-url=http://localstack:4566 s3 ls "s3://$BUCKET_NAME" &> /dev/null; then
+    echo "Creating S3 bucket: $BUCKET_NAME"
+    aws --endpoint-url=http://localstack:4566 s3 mb "s3://$BUCKET_NAME"
+    echo "S3 bucket created successfully."
+  else
+    echo "S3 bucket $BUCKET_NAME already exists."
+  fi
+fi
 
 # Execute the main command
 exec "$@"

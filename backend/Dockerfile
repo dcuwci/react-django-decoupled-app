@@ -13,19 +13,18 @@ WORKDIR /app
 COPY requirements.txt /app/
 
 # Install dependencies
-RUN apt-get update && apt-get install -y awscli && \
+RUN apt-get update && apt-get install -y awscli dos2unix && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application's code
 COPY . /app/
 
-# Copy the entrypoint script
-COPY aws-init.sh /app/
-RUN chmod +x /app/aws-init.sh
+# Fix line endings and permissions for the entrypoint script
+RUN dos2unix /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Run the application
-ENTRYPOINT ["/app/aws-init.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["sh", "-c", "if [ \"$DJANGO_ENV\" = \"development\" ]; then python manage.py runserver 0.0.0.0:8000; else gunicorn -c gunicorn.conf.py backend.wsgi:application; fi"]

@@ -31,7 +31,13 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').s
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://frontend:3000",  # Docker service name
 ]
+
+# Allow all origins in development for easier debugging
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
@@ -141,7 +147,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-USE_LOCALSTACK = os.environ.get('USE_LOCALSTACK') == 'true'
+USE_LOCALSTACK = os.environ.get('USE_LOCALSTACK', 'false').lower() == 'true'
 
 if USE_LOCALSTACK:
     # AWS/LocalStack S3 Configuration
@@ -168,12 +174,16 @@ if USE_LOCALSTACK:
     # Override media settings to use S3 exclusively
     MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
     
-    print("S3 storage configured with LocalStack - all files will be stored in S3")
-    print(f"Storage backend: {DEFAULT_FILE_STORAGE}")
-    print(f"S3 Endpoint: {AWS_S3_ENDPOINT_URL}")
-    print(f"S3 Bucket: {AWS_STORAGE_BUCKET_NAME}")
+    print("✅ S3 storage configured with LocalStack - all files will be stored in S3")
+    print(f"📦 Storage backend: {DEFAULT_FILE_STORAGE}")
+    print(f"🔗 S3 Endpoint: {AWS_S3_ENDPOINT_URL}")
+    print(f"🪣 S3 Bucket: {AWS_STORAGE_BUCKET_NAME}")
 else:
-    print("LocalStack integration disabled - using local file storage")
+    print("⚠️  LocalStack integration disabled - using local file storage")
+    # Ensure media directories exist for local storage
+    import os
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(STATIC_ROOT, exist_ok=True)
 
 # Security settings for production
 if not DEBUG:
