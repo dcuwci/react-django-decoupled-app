@@ -148,9 +148,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 USE_LOCALSTACK = os.environ.get('USE_LOCALSTACK', 'false').lower() == 'true'
+USE_AWS_S3 = os.environ.get('USE_AWS_S3', 'false').lower() == 'true'
 
 if USE_LOCALSTACK:
-    # AWS/LocalStack S3 Configuration
+    # AWS/LocalStack S3 Configuration (Development)
     AWS_S3_ENDPOINT_URL = 'http://localstack:4566'
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', 'test')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'test')
@@ -178,8 +179,39 @@ if USE_LOCALSTACK:
     print(f"📦 Storage backend: {DEFAULT_FILE_STORAGE}")
     print(f"🔗 S3 Endpoint: {AWS_S3_ENDPOINT_URL}")
     print(f"🪣 S3 Bucket: {AWS_STORAGE_BUCKET_NAME}")
+
+elif USE_AWS_S3:
+    # AWS S3 Configuration (Production)
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'public-read'  # Make files publicly readable
+    AWS_S3_VERIFY = True  # Enable SSL verification for AWS
+    AWS_S3_USE_SSL = True  # Use HTTPS for AWS
+    
+    # AWS S3 settings for production
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    AWS_LOCATION = 'media'  # Subdirectory in bucket for media files
+    
+    # Use AWS S3 storage backend
+    DEFAULT_FILE_STORAGE = 'storage_backends.AWSS3Storage'
+    
+    # Media URL for AWS S3
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+    
+    print("✅ S3 storage configured with AWS S3 - all files will be stored in AWS S3")
+    print(f"📦 Storage backend: {DEFAULT_FILE_STORAGE}")
+    print(f"🪣 S3 Bucket: {AWS_STORAGE_BUCKET_NAME}")
+    print(f"🌍 S3 Region: {AWS_S3_REGION_NAME}")
+    print(f"🔗 Media URL: {MEDIA_URL}")
+
 else:
-    print("⚠️  LocalStack integration disabled - using local file storage")
+    print("⚠️  S3 integration disabled - using local file storage")
     # Ensure media directories exist for local storage
     import os
     os.makedirs(MEDIA_ROOT, exist_ok=True)

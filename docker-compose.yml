@@ -45,9 +45,12 @@ services:
       - SERVICES=s3
       - DEFAULT_REGION=us-east-1
       - EAGER_SERVICE_LOADING=1
-      - DATA_DIR=/var/lib/localstack
+      - DATA_DIR=/var/lib/localstack/data
       - DEBUG=1
       - PERSISTENCE=1
+      - SNAPSHOT_SAVE_STRATEGY=ON_SHUTDOWN
+      - SNAPSHOT_LOAD_STRATEGY=ON_STARTUP
+      - LOCALSTACK_HOST=localstack
     volumes:
       - "localstack_data:/var/lib/localstack"
     healthcheck:

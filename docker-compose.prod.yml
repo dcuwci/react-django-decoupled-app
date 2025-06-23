@@ -7,6 +7,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     env_file:
       - ./.env.prod
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -18,43 +19,20 @@ services:
       - ./.env.prod
     environment:
       - DJANGO_ENV=production
-      - USE_LOCALSTACK=true
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_DEFAULT_REGION=us-east-1
     depends_on:
       - db
-      - localstack
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
     ports:
       - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
-
-  localstack:
-    image: localstack/localstack:latest
-    ports:
-      - "4566:4566"
-    environment:
-      - SERVICES=s3
-      - DEFAULT_REGION=us-east-1
-      - EAGER_SERVICE_LOADING=1
-      - DATA_DIR=/var/lib/localstack
-      - DEBUG=1
-      - PERSISTENCE=1
-    volumes:
-      - "localstack_data:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  localstack_data:

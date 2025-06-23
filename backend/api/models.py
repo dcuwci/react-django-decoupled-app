@@ -1,12 +1,18 @@
 from django.db import models
 from django.conf import settings
 
-# Import custom storage if LocalStack is enabled
-if getattr(settings, 'USE_LOCALSTACK', False):
-    from storage_backends import LocalStackS3Storage
-    image_storage = LocalStackS3Storage()
-else:
-    image_storage = None
+# Import appropriate storage backend based on configuration
+def get_image_storage():
+    if getattr(settings, 'USE_LOCALSTACK', False):
+        from storage_backends import LocalStackS3Storage
+        return LocalStackS3Storage()
+    elif getattr(settings, 'USE_AWS_S3', False):
+        from storage_backends import AWSS3Storage
+        return AWSS3Storage()
+    else:
+        return None
+
+image_storage = get_image_storage()
 
 class Message(models.Model):
     body = models.TextField()
